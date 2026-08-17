@@ -30,9 +30,12 @@ export function DocumentSummary({
 
 	if (loading) {
 		return (
-			<div className="mx-auto flex w-full max-w-2xl items-center gap-2.5 rounded-lg border border-neutral-200 bg-white px-4 py-3">
-				<Loader2 className="h-4 w-4 animate-spin text-neutral-400" />
-				<p className="text-sm text-neutral-500">Reading the document…</p>
+			<div className="mx-auto flex w-full max-w-2xl items-center gap-2.5 rounded-xl border border-neutral-100 bg-neutral-0 px-4 py-3.5 shadow-page">
+				<Loader2 className="h-4 w-4 animate-spin text-brand-500" />
+				<p className="text-sm text-neutral-600">
+					Reading the document
+					<span className="text-neutral-400"> — pulling out the key terms</span>
+				</p>
 			</div>
 		);
 	}
@@ -45,21 +48,25 @@ export function DocumentSummary({
 		<Collapsible.Root
 			open={open}
 			onOpenChange={setOpen}
-			className="mx-auto w-full max-w-2xl overflow-hidden rounded-lg border border-neutral-200 bg-white"
+			className="mx-auto w-full max-w-2xl overflow-hidden rounded-xl border border-neutral-100 bg-neutral-0 shadow-page"
 		>
-			<Collapsible.Trigger className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-neutral-50">
+			<Collapsible.Trigger className="flex w-full items-center gap-2 px-4 py-3.5 text-left transition-colors hover:bg-neutral-50">
 				<ChevronDown
 					className={`h-4 w-4 flex-shrink-0 text-neutral-400 transition-transform ${
 						open ? "" : "-rotate-90"
 					}`}
 				/>
-				<span className="text-sm font-semibold text-neutral-800">
+				<span className="text-sm font-semibold text-neutral-900">
 					Key terms
 				</span>
 				<span className="text-xs text-neutral-400">
 					{summary.document_type ?? "Document"} · {summary.items.length} terms
-					{risks > 0 ? ` · ${risks} to review` : ""}
 				</span>
+				{risks > 0 && (
+					<span className="ml-auto rounded-full bg-caution-light px-2 py-0.5 text-[0.6875rem] font-medium text-caution-dark">
+						{risks} to review
+					</span>
+				)}
 			</Collapsible.Trigger>
 
 			<Collapsible.Content>
@@ -67,13 +74,17 @@ export function DocumentSummary({
 					{summary.items.map((item) => (
 						<div
 							key={item.id}
-							className={`px-4 py-3 ${item.risk ? "bg-amber-50/40" : ""}`}
+							className={`px-4 py-3.5 ${item.risk ? "bg-caution-light/40" : ""}`}
 						>
-							<dt className="mb-0.5 flex items-center gap-1.5">
+							<dt className="mb-1 flex items-center gap-1.5">
 								{item.risk && (
-									<Flag className="h-3 w-3 flex-shrink-0 text-amber-600" />
+									<Flag className="h-3 w-3 flex-shrink-0 text-caution-dark" />
 								)}
-								<span className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+								<span
+									className={`text-[0.6875rem] font-semibold uppercase tracking-wider ${
+										item.risk ? "text-caution-dark" : "text-neutral-500"
+									}`}
+								>
 									{item.label}
 								</span>
 							</dt>

@@ -30,7 +30,7 @@ export function CitationChip({ label, citation, onSelect }: CitationChipProps) {
 			type="button"
 			disabled={!citation}
 			onClick={citation ? () => onSelect?.(citation) : undefined}
-			className={`ml-1 whitespace-nowrap rounded bg-neutral-100 px-1.5 py-px align-baseline font-mono text-[0.6875rem] font-medium text-neutral-500 transition-colors hover:bg-amber-100 hover:text-amber-900 disabled:cursor-default disabled:hover:bg-neutral-100 disabled:hover:text-neutral-500 ${
+			className={`ml-1 whitespace-nowrap rounded border border-neutral-100 bg-neutral-50 px-1.5 py-px align-baseline font-mono text-[0.6875rem] font-medium text-neutral-500 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-default disabled:hover:border-neutral-100 disabled:hover:bg-neutral-50 disabled:hover:text-neutral-500 ${
 				approximate ? "underline decoration-dotted underline-offset-2" : ""
 			}`}
 		>
@@ -45,11 +45,15 @@ export function CitationChip({ label, citation, onSelect }: CitationChipProps) {
 	return (
 		<Tooltip>
 			<TooltipTrigger asChild>{chip}</TooltipTrigger>
-			<TooltipContent side="top" align="start" className="max-w-sm px-3 py-2.5">
+			<TooltipContent
+				side="top"
+				align="start"
+				className="max-w-sm rounded-lg bg-neutral-900 px-3.5 py-3 shadow-lift"
+			>
 				<p className="font-serif text-[0.8125rem] leading-relaxed text-neutral-100">
 					“{citation.matched_text ?? citation.quote}”
 				</p>
-				<p className="mt-1.5 text-[0.6875rem] text-neutral-400">
+				<p className="mt-2 font-mono text-[0.6875rem] text-brand-300">
 					{citation.label} · page {citation.page}
 					{approximate ? " · closest match in the document" : ""}
 				</p>

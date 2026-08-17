@@ -55,10 +55,10 @@ export function DocumentUpload({
 	return (
 		<button
 			type="button"
-			className={`w-full max-w-md cursor-pointer rounded-xl border-2 border-dashed px-8 py-10 text-center transition-colors ${
+			className={`w-full max-w-md cursor-pointer rounded-2xl border-2 border-dashed px-8 py-12 text-center transition-colors ${
 				dragOver
-					? "border-neutral-400 bg-neutral-100"
-					: "border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50"
+					? "border-brand-500 bg-brand-50"
+					: "border-neutral-200 bg-neutral-0 hover:border-brand-300 hover:bg-brand-50/50"
 			}`}
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
@@ -75,19 +75,19 @@ export function DocumentUpload({
 
 			{uploading ? (
 				<div className="flex flex-col items-center">
-					<Loader2 className="mb-3 h-10 w-10 animate-spin text-neutral-400" />
+					<Loader2 className="mb-3 h-9 w-9 animate-spin text-brand-500" />
 					<p className="text-sm font-medium text-neutral-600">
-						Uploading document...
+						Reading document…
 					</p>
 				</div>
 			) : (
 				<div className="flex flex-col items-center">
-					<Upload className="mb-3 h-10 w-10 text-neutral-400" />
-					<p className="text-sm font-medium text-neutral-600">
+					<Upload className="mb-3 h-9 w-9 text-neutral-400" />
+					<p className="text-sm font-medium text-neutral-700">
 						Upload a PDF document
 					</p>
 					<p className="mt-1 text-xs text-neutral-400">
-						Click or drag and drop
+						Click, or drag and drop
 					</p>
 				</div>
 			)}

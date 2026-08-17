@@ -11,7 +11,11 @@ const ScrollArea = forwardRef<
 		className={cn("relative overflow-hidden", className)}
 		{...props}
 	>
-		<ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
+		{/* Radix gives the viewport's inner wrapper `display: table`, which sizes it to
+		    its content — so anything inside relying on `truncate` overflows instead of
+		    ellipsising. Forcing it back to a block is what makes long document names
+		    cut off cleanly at the sidebar edge. */}
+		<ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit] [&>div]:!block">
 			{children}
 		</ScrollAreaPrimitive.Viewport>
 		<ScrollBar />

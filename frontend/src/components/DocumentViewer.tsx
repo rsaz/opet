@@ -284,7 +284,7 @@ export function DocumentViewer({
 	return (
 		<div
 			style={{ width }}
-			className="relative flex h-full flex-shrink-0 flex-col border-l border-neutral-200 bg-white"
+			className="relative flex h-full flex-shrink-0 flex-col border-l border-neutral-200 bg-neutral-0"
 		>
 			{/* Resize handle */}
 			<div
@@ -295,12 +295,12 @@ export function DocumentViewer({
 			/>
 
 			{/* Header */}
-			<div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3">
+			<div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3.5">
 				<div className="min-w-0">
-					<p className="truncate text-sm font-medium text-neutral-800">
+					<p className="truncate text-sm font-medium text-neutral-900">
 						{document.filename}
 					</p>
-					<p className="text-xs text-neutral-400">
+					<p className="mt-0.5 text-xs text-neutral-400">
 						{numPages > 0
 							? `Page ${visiblePage} of ${numPages}`
 							: `${document.page_count} page${document.page_count !== 1 ? "s" : ""}`}
@@ -315,7 +315,7 @@ export function DocumentViewer({
 				className="flex-1 overflow-y-auto bg-neutral-100 p-4"
 			>
 				{pdfError && (
-					<div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+					<div className="rounded-lg bg-danger-light p-3 text-sm text-danger-dark">
 						{pdfError}
 					</div>
 				)}
@@ -331,7 +331,7 @@ export function DocumentViewer({
 					}}
 					loading={
 						<div className="flex items-center justify-center py-12">
-							<Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
+							<Loader2 className="h-6 w-6 animate-spin text-brand-500" />
 						</div>
 					}
 				>
@@ -345,9 +345,9 @@ export function DocumentViewer({
 										if (element) pageRefs.current.set(page, element);
 										else pageRefs.current.delete(page);
 									}}
-									className={`relative mb-3 scroll-mt-4 bg-white shadow-sm ring-1 transition-all ${
+									className={`relative mb-3 scroll-mt-4 bg-neutral-0 shadow-page ring-1 transition-all ${
 										isCited && pageOnlyHighlight
-											? "ring-2 ring-amber-400"
+											? "ring-2 ring-brand-500"
 											: "ring-neutral-200"
 									}`}
 								>

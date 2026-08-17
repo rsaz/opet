@@ -67,8 +67,8 @@ export function ChatWindow({
 	// Loading messages
 	if (loading) {
 		return (
-			<div className="flex flex-1 items-center justify-center bg-white">
-				<Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
+			<div className="flex flex-1 items-center justify-center bg-neutral-50">
+				<Loader2 className="h-6 w-6 animate-spin text-brand-500" />
 			</div>
 		);
 	}
@@ -76,7 +76,7 @@ export function ChatWindow({
 	// Empty conversation - show upload prompt
 	if (messages.length === 0 && !streaming) {
 		return (
-			<div className="flex flex-1 flex-col bg-white">
+			<div className="flex flex-1 flex-col bg-neutral-50">
 				{hasDocument ? (
 					<div className="flex-1 overflow-y-auto px-6 py-4">
 						<DocumentSummary
@@ -109,17 +109,17 @@ export function ChatWindow({
 	}
 
 	return (
-		<div className="flex flex-1 flex-col bg-white">
+		<div className="flex flex-1 flex-col bg-neutral-50">
 			{error && (
-				<div className="mx-auto mt-3 flex w-full max-w-2xl items-start gap-2.5 rounded-lg border border-red-100 bg-red-50 px-3.5 py-3">
-					<AlertCircle className="mt-px h-4 w-4 flex-shrink-0 text-red-500" />
+				<div className="mx-auto mt-4 flex w-full max-w-2xl items-start gap-2.5 rounded-xl bg-danger-light px-3.5 py-3">
+					<AlertCircle className="mt-px h-4 w-4 flex-shrink-0 text-danger-dark" />
 					<div className="min-w-0 flex-1">
-						<p className="text-sm text-red-700">{error}</p>
+						<p className="text-sm text-danger-dark">{error}</p>
 						<button
 							type="button"
 							onClick={onRetry}
 							disabled={streaming}
-							className="mt-1.5 inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-white px-2.5 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50"
+							className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-neutral-0 px-2.5 py-1 text-xs font-medium text-danger-dark shadow-page transition-colors hover:bg-neutral-50 disabled:opacity-50"
 						>
 							<RotateCw className="h-3 w-3" />
 							Ask again

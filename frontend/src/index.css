@@ -2,14 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Orbital's own palette, mirrored from tailwind.config.js for the handful of rules
+   that cannot be expressed as utility classes. */
+:root {
+	--n-0: #ffffff;
+	--n-50: #f7f6f4;
+	--n-100: #e6e4e1;
+	--n-200: #d6d3ce;
+	--n-300: #bfbbb4;
+	--n-400: #9c978e;
+	--n-500: #78746a;
+	--n-600: #5c584f;
+	--n-700: #423f38;
+	--n-800: #2c2a25;
+	--n-900: #1f1d1a;
+	--brand-100: #ffe4cc;
+	--brand-300: #ffb876;
+	--brand-500: #ff7d1a;
+	--brand-700: #b85400;
+}
+
 body {
 	margin: 0;
 	padding: 0;
 	font-family: "IBM Plex Sans", system-ui, sans-serif;
-	background-color: #fafafa;
-	color: #171717;
+	background-color: var(--n-50);
+	color: var(--n-900);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
 }
 
 #root {
@@ -17,9 +38,18 @@ body {
 	overflow: hidden;
 }
 
+/* One focus treatment everywhere, in the accent, so keyboard users get the same
+   affordance the pointer gets. */
+:focus-visible {
+	outline: 2px solid var(--brand-500);
+	outline-offset: 2px;
+	border-radius: 3px;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-	width: 6px;
+	width: 8px;
+	height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -27,12 +57,17 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-	background-color: #d4d4d4;
-	border-radius: 3px;
+	background-color: var(--n-200);
+	border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-	background-color: #a3a3a3;
+	background-color: var(--n-300);
+}
+
+::selection {
+	background-color: var(--brand-100);
+	color: var(--n-900);
 }
 
 /* Marks the cited characters inside pdf.js's transparent text layer, but paints
@@ -50,26 +85,27 @@ body {
 	z-index: 1;
 	pointer-events: none;
 	border-radius: 2px;
-	background-color: rgba(251, 191, 36, 0.45);
+	background-color: rgba(255, 184, 118, 0.5);
 	animation: citation-flash 1.6s ease-out;
 }
 
 @keyframes citation-flash {
 	0% {
-		background-color: rgba(245, 158, 11, 0.95);
+		background-color: rgba(255, 125, 26, 0.75);
 	}
 	60% {
-		background-color: rgba(245, 158, 11, 0.9);
+		background-color: rgba(255, 125, 26, 0.7);
 	}
 	100% {
-		background-color: rgba(251, 191, 36, 0.45);
+		background-color: rgba(255, 184, 118, 0.5);
 	}
 }
 
 /* Prose styling for markdown content */
 .prose {
-	line-height: 1.7;
+	line-height: 1.65;
 	font-size: 0.9375rem;
+	color: var(--n-800);
 }
 
 .prose p {
@@ -85,20 +121,27 @@ body {
 .prose h3,
 .prose h4 {
 	font-weight: 600;
-	margin-top: 1.25em;
-	margin-bottom: 0.5em;
+	color: var(--n-900);
+	letter-spacing: -0.01em;
+	margin-top: 1.35em;
+	margin-bottom: 0.45em;
 }
 
 .prose h1 {
-	font-size: 1.5em;
+	font-size: 1.35em;
 }
 
 .prose h2 {
-	font-size: 1.25em;
+	font-size: 1.15em;
 }
 
 .prose h3 {
-	font-size: 1.125em;
+	font-size: 1.05em;
+}
+
+.prose strong {
+	font-weight: 600;
+	color: var(--n-900);
 }
 
 .prose ul,
@@ -108,20 +151,21 @@ body {
 }
 
 .prose li {
-	margin-bottom: 0.25em;
+	margin-bottom: 0.35em;
 }
 
 .prose code {
 	font-family: "IBM Plex Mono", monospace;
 	font-size: 0.875em;
-	background-color: #f5f5f5;
+	background-color: var(--n-100);
+	color: var(--n-800);
 	padding: 0.125em 0.375em;
 	border-radius: 0.25em;
 }
 
 .prose pre {
-	background-color: #171717;
-	color: #e5e5e5;
+	background-color: var(--n-900);
+	color: var(--n-100);
 	padding: 1em;
 	border-radius: 0.5em;
 	overflow-x: auto;
@@ -134,32 +178,37 @@ body {
 	color: inherit;
 }
 
+/* Legal quotations read as the document speaking, so they are set in the serif. */
 .prose blockquote {
-	border-left: 3px solid #d4d4d4;
+	border-left: 2px solid var(--brand-300);
 	padding-left: 1em;
 	margin: 0.75em 0;
-	color: #525252;
+	font-family: "IBM Plex Serif", Georgia, serif;
+	color: var(--n-600);
 }
 
 .prose a {
-	color: #2563eb;
+	color: var(--brand-700);
 	text-decoration: underline;
+	text-underline-offset: 2px;
 }
 
 .prose table {
 	width: 100%;
 	border-collapse: collapse;
 	margin: 0.75em 0;
+	font-size: 0.9375em;
 }
 
 .prose th,
 .prose td {
-	border: 1px solid #e5e5e5;
+	border: 1px solid var(--n-200);
 	padding: 0.5em 0.75em;
 	text-align: left;
 }
 
 .prose th {
-	background-color: #f5f5f5;
+	background-color: var(--n-50);
 	font-weight: 600;
+	color: var(--n-700);
 }

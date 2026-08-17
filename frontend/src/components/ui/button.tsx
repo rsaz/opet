@@ -7,11 +7,12 @@ const buttonVariants = cva(
 	{
 		variants: {
 			variant: {
-				default: "bg-neutral-900 text-white shadow hover:bg-neutral-800",
+				default: "bg-brand-500 text-neutral-0 shadow hover:bg-brand-600",
 				secondary:
 					"bg-neutral-100 text-neutral-900 shadow-sm hover:bg-neutral-200",
 				ghost: "hover:bg-neutral-100",
-				destructive: "bg-red-500 text-white shadow-sm hover:bg-red-600",
+				destructive:
+					"bg-danger-light text-danger-dark shadow-sm hover:bg-danger-light/80",
 			},
 			size: {
 				default: "h-9 px-4 py-2",

@@ -26,10 +26,18 @@ export function ChatSidebar({
 	const [hoveredId, setHoveredId] = useState<string | null>(null);
 
 	return (
-		<div className="flex h-full w-[250px] flex-shrink-0 flex-col border-r border-neutral-200 bg-white">
-			<div className="flex items-center justify-between border-b border-neutral-100 p-3">
-				<span className="text-sm font-semibold text-neutral-700">Chats</span>
-				<Button variant="ghost" size="icon" onClick={onCreate} title="New chat">
+		<div className="flex h-full w-[264px] flex-shrink-0 flex-col border-r border-neutral-200 bg-neutral-0">
+			<div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3.5">
+				<span className="text-[0.8125rem] font-semibold tracking-wide text-neutral-700 uppercase">
+					Documents
+				</span>
+				<Button
+					variant="ghost"
+					size="icon"
+					onClick={onCreate}
+					title="New conversation"
+					className="text-neutral-500 hover:bg-brand-50 hover:text-brand-700"
+				>
 					<MessageSquarePlus className="h-4 w-4" />
 				</Button>
 			</div>
@@ -48,8 +56,8 @@ export function ChatSidebar({
 					)}
 
 					{!loading && conversations.length === 0 && (
-						<p className="px-2 py-8 text-center text-xs text-neutral-400">
-							No conversations yet
+						<p className="px-3 py-8 text-center text-xs leading-relaxed text-neutral-400">
+							Upload a document to begin
 						</p>
 					)}
 
@@ -66,24 +74,42 @@ export function ChatSidebar({
 								    Nesting one button inside another is invalid HTML and leaves
 								    delete unreachable by keyboard. */}
 								<div
-									className={`group relative rounded-lg transition-colors ${
+									className={`group relative mb-0.5 overflow-hidden rounded-lg transition-colors ${
 										selectedId === conversation.id
-											? "bg-neutral-100"
+											? "bg-brand-50"
 											: "hover:bg-neutral-50"
 									}`}
 									onMouseEnter={() => setHoveredId(conversation.id)}
 									onMouseLeave={() => setHoveredId(null)}
 								>
+									{/* A quiet accent bar rather than a heavier fill: the selected
+									    document should be obvious at a glance without turning the
+									    list into a stack of blocks. */}
+									{selectedId === conversation.id && (
+										<span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-brand-500" />
+									)}
 									<button
 										type="button"
-										className="flex w-full items-start gap-2 px-3 py-2.5 pr-9 text-left"
+										className="flex w-full items-start gap-2.5 px-3.5 py-2.5 pr-9 text-left"
 										onClick={() => onSelect(conversation.id)}
 									>
 										{conversation.has_document && (
-											<FileText className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-neutral-400" />
+											<FileText
+												className={`mt-0.5 h-3.5 w-3.5 flex-shrink-0 ${
+													selectedId === conversation.id
+														? "text-brand-600"
+														: "text-neutral-400"
+												}`}
+											/>
 										)}
 										<div className="min-w-0 flex-1 overflow-hidden">
-											<p className="truncate text-sm font-medium text-neutral-800">
+											<p
+												className={`truncate text-sm ${
+													selectedId === conversation.id
+														? "font-semibold text-neutral-900"
+														: "font-medium text-neutral-800"
+												}`}
+											>
 												{conversation.title}
 											</p>
 											<p className="mt-0.5 text-xs text-neutral-400">
@@ -94,7 +120,7 @@ export function ChatSidebar({
 
 									<button
 										type="button"
-										className={`absolute top-2.5 right-2 rounded p-1 text-neutral-400 transition-opacity hover:bg-neutral-200 hover:text-red-500 focus-visible:opacity-100 ${
+										className={`absolute top-2.5 right-2 rounded p-1 text-neutral-400 transition-opacity hover:bg-neutral-200 hover:text-danger-dark focus-visible:opacity-100 ${
 											hoveredId === conversation.id
 												? "opacity-100"
 												: "opacity-0"

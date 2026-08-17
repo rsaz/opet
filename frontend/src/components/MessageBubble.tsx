@@ -82,7 +82,7 @@ export function MessageBubble({
 				className="flex justify-end py-1.5"
 			>
 				<div className="max-w-[75%] rounded-2xl rounded-br-md bg-neutral-100 px-4 py-2.5">
-					<p className="whitespace-pre-wrap text-sm text-neutral-800">
+					<p className="whitespace-pre-wrap text-sm leading-relaxed text-neutral-800">
 						{message.content}
 					</p>
 				</div>
@@ -98,10 +98,10 @@ export function MessageBubble({
 			transition={{ duration: 0.2 }}
 			className="flex gap-3 py-1.5"
 		>
-			<div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-900">
-				<Bot className="h-4 w-4 text-white" />
+			<div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-sky-500">
+				<Bot className="h-4 w-4 text-neutral-0" />
 			</div>
-			<div className="min-w-0 max-w-[80%]">
+			<div className="min-w-0 max-w-[82%]">
 				<div className="prose">
 					<Streamdown components={components}>{message.content}</Streamdown>
 				</div>
@@ -121,7 +121,7 @@ export function MessageBubble({
 function UnverifiedNote({ count }: { count: number }) {
 	if (count < 1) return null;
 	return (
-		<p className="mt-2 flex items-start gap-1.5 text-xs text-amber-700">
+		<p className="mt-2.5 flex items-start gap-1.5 rounded-md bg-caution-light px-2.5 py-1.5 text-xs text-caution-dark">
 			<AlertTriangle className="mt-px h-3.5 w-3.5 flex-shrink-0" />
 			<span>
 				{count} reference{count !== 1 ? "s" : ""} could not be found in this
@@ -149,10 +149,10 @@ export function StreamingBubble({
 
 	return (
 		<div className="flex gap-3 py-1.5">
-			<div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-900">
-				<Bot className="h-4 w-4 text-white" />
+			<div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-sky-500">
+				<Bot className="h-4 w-4 text-neutral-0" />
 			</div>
-			<div className="min-w-0 max-w-[80%]">
+			<div className="min-w-0 max-w-[82%]">
 				{content ? (
 					<div className="prose">
 						<Streamdown mode="streaming" components={components}>
@@ -161,18 +161,18 @@ export function StreamingBubble({
 					</div>
 				) : (
 					<div className="flex items-center gap-1 py-2">
-						<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-neutral-400" />
+						<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-300" />
 						<span
-							className="h-1.5 w-1.5 animate-pulse rounded-full bg-neutral-400"
+							className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-300"
 							style={{ animationDelay: "0.15s" }}
 						/>
 						<span
-							className="h-1.5 w-1.5 animate-pulse rounded-full bg-neutral-400"
+							className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-300"
 							style={{ animationDelay: "0.3s" }}
 						/>
 					</div>
 				)}
-				<span className="inline-block h-4 w-0.5 animate-pulse bg-neutral-400" />
+				<span className="inline-block h-4 w-0.5 animate-pulse bg-brand-500" />
 			</div>
 		</div>
 	);
