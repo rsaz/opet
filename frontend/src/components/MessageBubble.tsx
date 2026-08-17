@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Bot } from "lucide-react";
+import { AlertTriangle, Bot } from "lucide-react";
 import { useMemo } from "react";
 import { Streamdown } from "streamdown";
 import "streamdown/styles.css";
@@ -97,8 +97,29 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 				<div className="prose">
 					<Streamdown components={components}>{message.content}</Streamdown>
 				</div>
+				<UnverifiedNote count={message.unverified_citations ?? 0} />
 			</div>
 		</motion.div>
+	);
+}
+
+/**
+ * Says out loud when the assistant offered a reference that isn't in the document.
+ *
+ * The reference itself is discarded, which leaves the claim it supported standing
+ * with nothing behind it. Reporting the count is the difference between a tool that
+ * quietly over-reaches and one that tells you it did.
+ */
+function UnverifiedNote({ count }: { count: number }) {
+	if (count < 1) return null;
+	return (
+		<p className="mt-2 flex items-start gap-1.5 text-xs text-amber-700">
+			<AlertTriangle className="mt-px h-3.5 w-3.5 flex-shrink-0" />
+			<span>
+				{count} reference{count !== 1 ? "s" : ""} could not be found in this
+				document and {count !== 1 ? "were" : "was"} not shown.
+			</span>
+		</p>
 	);
 }
 

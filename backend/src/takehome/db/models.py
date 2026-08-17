@@ -43,6 +43,9 @@ class Message(Base):
     role: Mapped[str] = mapped_column(String)  # "user", "assistant", "system"
     content: Mapped[str] = mapped_column(Text)
     sources_cited: Mapped[int] = mapped_column(Integer, default=0)
+    # References the model offered that could not be found in the document. They are
+    # never shown, but the count is, so a reader knows the answer over-reached.
+    unverified_citations: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     conversation: Mapped[Conversation] = relationship(back_populates="messages")

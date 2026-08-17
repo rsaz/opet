@@ -27,6 +27,8 @@ export interface Message {
 	role: "user" | "assistant" | "system";
 	content: string;
 	sources_cited: number;
+	/** References the assistant offered that could not be found in the document. */
+	unverified_citations?: number;
 	created_at: string;
 	citations?: Citation[];
 }

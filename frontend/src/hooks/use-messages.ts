@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as api from "../lib/api";
-import type { Message } from "../types";
+import type { Citation, Message } from "../types";
 
 export function useMessages(conversationId: string | null) {
 	const [messages, setMessages] = useState<Message[]>([]);
@@ -8,6 +8,7 @@ export function useMessages(conversationId: string | null) {
 	const [error, setError] = useState<string | null>(null);
 	const [streaming, setStreaming] = useState(false);
 	const [streamingContent, setStreamingContent] = useState("");
+	const [streamingCitations, setStreamingCitations] = useState<Citation[]>([]);
 	const abortRef = useRef<AbortController | null>(null);
 
 	const refresh = useCallback(async () => {
@@ -52,6 +53,7 @@ export function useMessages(conversationId: string | null) {
 			setMessages((prev) => [...prev, userMessage]);
 			setStreaming(true);
 			setStreamingContent("");
+			setStreamingCitations([]);
 			setError(null);
 
 			try {
@@ -88,6 +90,7 @@ export function useMessages(conversationId: string | null) {
 								content?: string;
 								delta?: string;
 								message?: Message;
+								citation?: Citation;
 							};
 
 							if (parsed.type === "delta" && parsed.delta) {
@@ -96,6 +99,11 @@ export function useMessages(conversationId: string | null) {
 							} else if (parsed.type === "content" && parsed.content) {
 								accumulated += parsed.content;
 								setStreamingContent(accumulated);
+							} else if (parsed.type === "citation" && parsed.citation) {
+								// Arrives right after the text it belongs to, so the chip
+								// already in the stream can show its passage on hover.
+								const citation = parsed.citation;
+								setStreamingCitations((prev) => [...prev, citation]);
 							} else if (parsed.type === "message" && parsed.message) {
 								// Final message from server
 								setMessages((prev) => [...prev, parsed.message as Message]);
@@ -134,6 +142,7 @@ export function useMessages(conversationId: string | null) {
 			} finally {
 				setStreaming(false);
 				setStreamingContent("");
+				setStreamingCitations([]);
 			}
 		},
 		[conversationId, streaming],
@@ -145,6 +154,7 @@ export function useMessages(conversationId: string | null) {
 		error,
 		streaming,
 		streamingContent,
+		streamingCitations,
 		send,
 		refresh,
 	};

@@ -53,6 +53,7 @@ class MessageOut(BaseModel):
     role: str
     content: str
     sources_cited: int
+    unverified_citations: int = 0
     created_at: datetime
     citations: list[CitationOut] = []
 
@@ -93,6 +94,7 @@ def _serialise(message: Message, citations: list[Citation]) -> dict[str, object]
         "role": message.role,
         "content": message.content,
         "sources_cited": message.sources_cited,
+        "unverified_citations": message.unverified_citations,
         "created_at": message.created_at.isoformat(),
         "citations": [
             {
@@ -144,6 +146,7 @@ async def list_messages(
             role=m.role,
             content=m.content,
             sources_cited=m.sources_cited,
+            unverified_citations=m.unverified_citations,
             created_at=m.created_at,
             citations=[CitationOut.model_validate(c) for c in m.citations],
         )
@@ -277,6 +280,7 @@ async def send_message(
                 role="assistant",
                 content=full_response,
                 sources_cited=len(verified),
+                unverified_citations=rejected,
             )
             save_session.add(assistant_message)
             await save_session.commit()
