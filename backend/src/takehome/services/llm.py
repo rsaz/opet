@@ -6,9 +6,12 @@ from dataclasses import dataclass
 
 from pydantic_ai import Agent
 
-from takehome.config import settings  # noqa: F401 — triggers ANTHROPIC_API_KEY export
+from takehome.config import settings
 
-MODEL = "anthropic:claude-haiku-4-5-20251001"
+# Importing settings is what puts ANTHROPIC_API_KEY into the environment for
+# pydantic-ai to find. Reading it here makes that dependency explicit rather than
+# leaving an import that looks unused and invites deletion.
+MODEL = f"anthropic:{settings.model}"
 
 # The marker the model wraps around every citation. Parsed out of the stream before
 # any text reaches the client, so the user never sees the raw syntax.

@@ -70,7 +70,7 @@ class TestFindQuote:
         assert "\n" in match.text  # the span is the document's own characters
 
     def test_curly_quotes_and_case_do_not_defeat_a_match(self) -> None:
-        match = find_quote('THE “BREAK PREMIUM”', PAGE_7, 7)
+        match = find_quote("THE “BREAK PREMIUM”", PAGE_7, 7)
         assert match is not None
         assert match.kind is MatchKind.NORMALISED
 

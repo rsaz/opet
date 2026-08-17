@@ -275,9 +275,7 @@ async def send_message(
             # user's turn too, so the conversation is exactly as it was and the
             # question can simply be asked again.
             async with session_factory() as cleanup_session:
-                await cleanup_session.execute(
-                    delete(Message).where(Message.id == user_message.id)
-                )
+                await cleanup_session.execute(delete(Message).where(Message.id == user_message.id))
                 await cleanup_session.commit()
 
             error_event = json.dumps(

@@ -8,6 +8,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://orbital:orbital@db:5432/orbital_takehome"
     anthropic_api_key: str = ""
+    model: str = "claude-haiku-4-5-20251001"
     upload_dir: str = "uploads"
     max_upload_size: int = 25 * 1024 * 1024  # 25MB
 

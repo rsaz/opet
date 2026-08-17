@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import uuid
 
-import fitz  # PyMuPDF
+import pymupdf
 import structlog
 from fastapi import UploadFile
 from sqlalchemy import select
@@ -28,7 +28,9 @@ async def upload_document(
     # Check if conversation already has a document
     existing = await get_document_for_conversation(session, conversation_id)
     if existing is not None:
-        raise ValueError("Conversation already has a document. Only one document per conversation is allowed.")
+        raise ValueError(
+            "Conversation already has a document. Only one document per conversation is allowed."
+        )
 
     # Validate file type
     if file.content_type not in ("application/pdf", "application/x-pdf"):
@@ -70,11 +72,14 @@ async def upload_document(
     page_count = 0
     pages: list[str] = []
     try:
-        doc = fitz.open(file_path)
+        doc = pymupdf.open(file_path)
         page_count = len(doc)
         for page_num in range(page_count):
             page = doc[page_num]
-            pages.append(page.get_text())  # type: ignore[union-attr]
+            # get_text() returns a dict or a list for other output modes, so the
+            # plain-text case has to be narrowed rather than assumed.
+            text = page.get_text()  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+            pages.append(text if isinstance(text, str) else "")
         extracted_text = "\n\n".join(
             f"--- Page {i + 1} ---\n{text}" for i, text in enumerate(pages) if text.strip()
         )
