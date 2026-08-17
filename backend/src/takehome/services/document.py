@@ -59,23 +59,30 @@ async def upload_document(
 
     logger.info("Saved uploaded PDF", filename=original_filename, path=file_path, size=len(content))
 
-    # Extract text using PyMuPDF
+    # Extract text using PyMuPDF, keeping page boundaries intact.
+    #
+    # `pages[i]` holds the text of page i+1 verbatim, with nothing added to it. That
+    # matters: every citation the model produces is checked against the page it claims
+    # to come from, so an injected "--- Page N ---" separator would be quotable text
+    # that isn't actually in the document. `extracted_text` keeps the older flattened
+    # form so nothing that already reads it has to change.
     extracted_text = ""
     page_count = 0
+    pages: list[str] = []
     try:
         doc = fitz.open(file_path)
         page_count = len(doc)
-        pages: list[str] = []
         for page_num in range(page_count):
             page = doc[page_num]
-            text = page.get_text()  # type: ignore[union-attr]
-            if text.strip():
-                pages.append(f"--- Page {page_num + 1} ---\n{text}")
-        extracted_text = "\n\n".join(pages)
+            pages.append(page.get_text())  # type: ignore[union-attr]
+        extracted_text = "\n\n".join(
+            f"--- Page {i + 1} ---\n{text}" for i, text in enumerate(pages) if text.strip()
+        )
         doc.close()
     except Exception:
         logger.exception("Failed to extract text from PDF", filename=original_filename)
         extracted_text = ""
+        pages = []
 
     logger.info(
         "Extracted text from PDF",
@@ -90,6 +97,7 @@ async def upload_document(
         filename=original_filename,
         file_path=file_path,
         extracted_text=extracted_text if extracted_text else None,
+        pages=pages if pages else None,
         page_count=page_count,
     )
     session.add(document)

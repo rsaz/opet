@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -46,6 +46,11 @@ class Message(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     conversation: Mapped[Conversation] = relationship(back_populates="messages")
+    citations: Mapped[list[Citation]] = relationship(
+        back_populates="message",
+        cascade="all, delete-orphan",
+        order_by="Citation.ordinal",
+    )
 
 
 class Document(Base):
@@ -60,7 +65,35 @@ class Document(Base):
     filename: Mapped[str] = mapped_column(String)
     file_path: Mapped[str] = mapped_column(String)
     extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Per-page plain text, index 0 == page 1. Kept alongside `extracted_text` because
+    # a citation has to be checkable against the exact page it claims to come from.
+    pages: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     page_count: Mapped[int] = mapped_column(Integer, default=0)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     conversation: Mapped[Conversation] = relationship(back_populates="documents")
+
+
+class Citation(Base):
+    """A single reference from an assistant message back into the document.
+
+    One row per citation the model produced, in the order it produced them. The
+    `ordinal` is what the inline `#cite-N` anchor in the message body points at.
+    """
+
+    __tablename__ = "citations"
+
+    id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: uuid.uuid4().hex[:16]
+    )
+    message_id: Mapped[str] = mapped_column(ForeignKey("messages.id", ondelete="CASCADE"))
+    document_id: Mapped[str | None] = mapped_column(
+        ForeignKey("documents.id", ondelete="SET NULL"), nullable=True
+    )
+    ordinal: Mapped[int] = mapped_column(Integer)
+    page: Mapped[int] = mapped_column(Integer)
+    quote: Mapped[str] = mapped_column(Text)
+    label: Mapped[str] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    message: Mapped[Message] = relationship(back_populates="citations")

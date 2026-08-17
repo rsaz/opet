@@ -6,6 +6,16 @@ export interface Conversation {
 	has_document: boolean;
 }
 
+/** A reference from an answer back into the document it came from. */
+export interface Citation {
+	id: string;
+	/** 1-based, and what the inline `#cite-N` anchor in the message body points at. */
+	ordinal: number;
+	page: number;
+	quote: string;
+	label: string;
+}
+
 export interface Message {
 	id: string;
 	conversation_id: string;
@@ -13,6 +23,7 @@ export interface Message {
 	content: string;
 	sources_cited: number;
 	created_at: string;
+	citations?: Citation[];
 }
 
 export interface Document {

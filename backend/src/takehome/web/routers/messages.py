@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import AsyncIterator
 from datetime import datetime
 
@@ -9,13 +10,19 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from starlette.responses import StreamingResponse
 
-from takehome.db.models import Message
+from takehome.db.models import Citation, Message
 from takehome.db.session import get_session
 from takehome.services.conversation import get_conversation, update_conversation
 from takehome.services.document import get_document_for_conversation
-from takehome.services.llm import chat_with_document, count_sources_cited, generate_title
+from takehome.services.llm import (
+    CitationDraft,
+    TextChunk,
+    chat_with_document,
+    generate_title,
+)
 
 logger = structlog.get_logger()
 
@@ -27,6 +34,16 @@ router = APIRouter(tags=["messages"])
 # --------------------------------------------------------------------------- #
 
 
+class CitationOut(BaseModel):
+    id: str
+    ordinal: int
+    page: int
+    quote: str
+    label: str
+
+    model_config = {"from_attributes": True}
+
+
 class MessageOut(BaseModel):
     id: str
     conversation_id: str
@@ -34,12 +51,57 @@ class MessageOut(BaseModel):
     content: str
     sources_cited: int
     created_at: datetime
+    citations: list[CitationOut] = []
 
     model_config = {"from_attributes": True}
 
 
 class MessageCreate(BaseModel):
     content: str
+
+
+_NUMBERED_LABEL = re.compile(r"^(?:clause|section|paragraph)\s+(\d.*)$", re.IGNORECASE)
+
+
+def _short_label(label: str) -> str:
+    """Shorten 'clause 8.3.1(c)' to '§8.3.1(c)'.
+
+    A chip sits inside a sentence a lawyer is reading closely, so it has to be a
+    reference rather than a phrase. Labels without a number ('Definitions') are left
+    alone — a § in front of a word would be wrong.
+    """
+    match = _NUMBERED_LABEL.match(label.strip())
+    return f"§{match.group(1)}" if match else label.strip()
+
+
+def _citation_link(ordinal: int, label: str, page: int) -> str:
+    """The inline form a citation takes inside the stored answer.
+
+    A markdown link rather than a bespoke token, so the answer stays valid markdown
+    and the `#cite-N` anchor gives the UI a stable handle to turn into a chip.
+    """
+    return f"[{_short_label(label)} · p{page}](#cite-{ordinal})"
+
+
+def _serialise(message: Message, citations: list[Citation]) -> dict[str, object]:
+    return {
+        "id": message.id,
+        "conversation_id": message.conversation_id,
+        "role": message.role,
+        "content": message.content,
+        "sources_cited": message.sources_cited,
+        "created_at": message.created_at.isoformat(),
+        "citations": [
+            {
+                "id": c.id,
+                "ordinal": c.ordinal,
+                "page": c.page,
+                "quote": c.quote,
+                "label": c.label,
+            }
+            for c in citations
+        ],
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -65,6 +127,7 @@ async def list_messages(
         select(Message)
         .where(Message.conversation_id == conversation_id)
         .order_by(Message.created_at.asc())
+        .options(selectinload(Message.citations))
     )
     result = await session.execute(stmt)
     messages = list(result.scalars().all())
@@ -77,6 +140,7 @@ async def list_messages(
             content=m.content,
             sources_cited=m.sources_cited,
             created_at=m.created_at,
+            citations=[CitationOut.model_validate(c) for c in m.citations],
         )
         for m in messages
     ]
@@ -106,9 +170,12 @@ async def send_message(
 
     logger.info("User message saved", conversation_id=conversation_id, message_id=user_message.id)
 
-    # Load document text for the conversation
+    # Load the document for the conversation. `pages` is what the model is shown and
+    # what a citation is later checked against.
     document = await get_document_for_conversation(session, conversation_id)
-    document_text: str | None = document.extracted_text if document else None
+    document_id: str | None = document.id if document else None
+    filename: str | None = document.filename if document else None
+    pages: list[str] | None = document.pages if document else None
 
     # Load conversation history (exclude the message we just saved, it will be the user_message param)
     stmt = (
@@ -131,16 +198,41 @@ async def send_message(
     async def event_stream() -> AsyncIterator[str]:
         """Generate SSE events with the streamed LLM response."""
         full_response = ""
+        drafts: list[CitationDraft] = []
 
         try:
-            async for chunk in chat_with_document(
+            async for event in chat_with_document(
                 user_message=body.content,
-                document_text=document_text,
+                filename=filename,
+                pages=pages,
                 conversation_history=conversation_history,
             ):
-                full_response += chunk
-                event_data = json.dumps({"type": "content", "content": chunk})
-                yield f"data: {event_data}\n\n"
+                if isinstance(event, TextChunk):
+                    full_response += event.text
+                    text_event = json.dumps({"type": "content", "content": event.text})
+                    yield f"data: {text_event}\n\n"
+                    continue
+
+                # A citation. Number it, drop it into the prose exactly where the model
+                # put it, and tell the client about it separately.
+                drafts.append(event)
+                ordinal = len(drafts)
+                link = _citation_link(ordinal, event.label, event.page)
+                full_response += link
+                link_event = json.dumps({"type": "content", "content": link})
+                yield f"data: {link_event}\n\n"
+                citation_event = json.dumps(
+                    {
+                        "type": "citation",
+                        "citation": {
+                            "ordinal": ordinal,
+                            "page": event.page,
+                            "quote": event.quote,
+                            "label": event.label,
+                        },
+                    }
+                )
+                yield f"data: {citation_event}\n\n"
 
         except Exception:
             logger.exception(
@@ -149,11 +241,9 @@ async def send_message(
             )
             error_msg = "I'm sorry, an error occurred while generating a response. Please try again."
             full_response = error_msg
+            drafts = []
             event_data = json.dumps({"type": "content", "content": error_msg})
             yield f"data: {event_data}\n\n"
-
-        # Count sources cited in the full response
-        sources = count_sources_cited(full_response)
 
         # Save the assistant message to the database.
         # We need a fresh session since the outer one may have been closed.
@@ -164,11 +254,35 @@ async def send_message(
                 conversation_id=conversation_id,
                 role="assistant",
                 content=full_response,
-                sources_cited=sources,
+                sources_cited=len(drafts),
             )
             save_session.add(assistant_message)
             await save_session.commit()
             await save_session.refresh(assistant_message)
+
+            citations = [
+                Citation(
+                    message_id=assistant_message.id,
+                    document_id=document_id,
+                    ordinal=ordinal,
+                    page=draft.page,
+                    quote=draft.quote,
+                    label=draft.label,
+                )
+                for ordinal, draft in enumerate(drafts, start=1)
+            ]
+            if citations:
+                save_session.add_all(citations)
+                await save_session.commit()
+                for citation in citations:
+                    await save_session.refresh(citation)
+
+            logger.info(
+                "Assistant message saved",
+                conversation_id=conversation_id,
+                message_id=assistant_message.id,
+                citations=len(citations),
+            )
 
             # Auto-generate title from first user message
             if is_first_message:
@@ -190,14 +304,7 @@ async def send_message(
             message_data = json.dumps(
                 {
                     "type": "message",
-                    "message": {
-                        "id": assistant_message.id,
-                        "conversation_id": assistant_message.conversation_id,
-                        "role": assistant_message.role,
-                        "content": assistant_message.content,
-                        "sources_cited": assistant_message.sources_cited,
-                        "created_at": assistant_message.created_at.isoformat(),
-                    },
+                    "message": _serialise(assistant_message, citations),
                 }
             )
             yield f"data: {message_data}\n\n"
@@ -206,7 +313,7 @@ async def send_message(
             done_data = json.dumps(
                 {
                     "type": "done",
-                    "sources_cited": sources,
+                    "sources_cited": len(citations),
                     "message_id": assistant_message.id,
                 }
             )
