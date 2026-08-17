@@ -44,3 +44,19 @@ export interface Document {
 export interface ConversationDetail extends Conversation {
 	document?: Document;
 }
+
+/** One key term pulled out of a document when it arrived. */
+export interface SummaryItem {
+	id: string;
+	label: string;
+	value: string;
+	/** True for terms a reviewer should escalate rather than merely note. */
+	risk: boolean;
+	citations: Omit<Citation, "id" | "ordinal">[];
+}
+
+export interface DocumentSummary {
+	document_id: string;
+	document_type?: string | null;
+	items: SummaryItem[];
+}

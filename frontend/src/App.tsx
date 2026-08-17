@@ -6,6 +6,7 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { useConversations } from "./hooks/use-conversations";
 import { useDocument } from "./hooks/use-document";
 import { useMessages } from "./hooks/use-messages";
+import { useSummary } from "./hooks/use-summary";
 import type { Citation } from "./types";
 
 export default function App() {
@@ -36,6 +37,8 @@ export default function App() {
 		upload,
 		refresh: refreshDocument,
 	} = useDocument(selectedId);
+
+	const { summary, loading: summaryLoading } = useSummary(document?.id ?? null);
 
 	const handleSend = useCallback(
 		async (content: string) => {
@@ -97,6 +100,8 @@ export default function App() {
 					streamingCitations={streamingCitations}
 					hasDocument={!!document}
 					uploading={uploading}
+					summary={summary}
+					summaryLoading={summaryLoading}
 					conversationId={selectedId}
 					onSend={handleSend}
 					onUpload={handleUpload}

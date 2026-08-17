@@ -6,12 +6,15 @@ from datetime import datetime
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import FileResponse
 
+from takehome.db.models import SummaryItem
 from takehome.db.session import get_session
 from takehome.services.conversation import get_conversation
 from takehome.services.document import get_document, upload_document
+from takehome.services.summary import extract_summary
 
 logger = structlog.get_logger()
 
@@ -21,6 +24,28 @@ router = APIRouter(tags=["documents"])
 # --------------------------------------------------------------------------- #
 # Schemas
 # --------------------------------------------------------------------------- #
+
+
+class SummaryCitationOut(BaseModel):
+    page: int
+    quote: str
+    label: str
+    matched_text: str | None = None
+    match_kind: str | None = None
+
+
+class SummaryItemOut(BaseModel):
+    id: str
+    label: str
+    value: str
+    risk: bool
+    citations: list[SummaryCitationOut] = []
+
+
+class SummaryOut(BaseModel):
+    document_id: str
+    document_type: str | None = None
+    items: list[SummaryItemOut] = []
 
 
 class DocumentOut(BaseModel):
@@ -99,4 +124,65 @@ async def serve_document_file(
         path=document.file_path,
         filename=document.filename,
         media_type="application/pdf",
+    )
+
+
+@router.get("/api/documents/{document_id}/summary", response_model=SummaryOut)
+async def get_document_summary(
+    document_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> SummaryOut:
+    """Key terms for a document, extracted on first request and cached after.
+
+    Extraction is deliberately not part of the upload. Upload should feel instant —
+    the reader wants to see their document — and reading it properly takes a
+    round-trip the upload has no reason to wait for.
+    """
+    document = await get_document(session, document_id)
+    if document is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    stmt = (
+        select(SummaryItem)
+        .where(SummaryItem.document_id == document_id)
+        .order_by(SummaryItem.ordinal.asc())
+    )
+    existing = list((await session.execute(stmt)).scalars().all())
+
+    if not existing:
+        if not document.pages:
+            return SummaryOut(document_id=document_id)
+
+        summary = await extract_summary(document.filename, document.pages)
+        existing = [
+            SummaryItem(
+                document_id=document_id,
+                ordinal=ordinal,
+                label=item.label,
+                value=item.value,
+                risk=item.risk,
+                document_type=summary.document_type,
+                citations=[c.model_dump() for c in item.citations],
+            )
+            for ordinal, item in enumerate(summary.items, start=1)
+        ]
+        if existing:
+            session.add_all(existing)
+            await session.commit()
+            for item in existing:
+                await session.refresh(item)
+
+    return SummaryOut(
+        document_id=document_id,
+        document_type=existing[0].document_type if existing else None,
+        items=[
+            SummaryItemOut(
+                id=item.id,
+                label=item.label,
+                value=item.value,
+                risk=item.risk,
+                citations=[SummaryCitationOut.model_validate(c) for c in item.citations],
+            )
+            for item in existing
+        ],
     )

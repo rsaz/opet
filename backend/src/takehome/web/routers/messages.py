@@ -64,15 +64,17 @@ class MessageCreate(BaseModel):
     content: str
 
 
-_NUMBERED_LABEL = re.compile(r"^(?:clause|section|paragraph)\s+(\d.*)$", re.IGNORECASE)
+_NUMBERED_LABEL = re.compile(
+    r"^(?:clause|section|paragraph)?\s*(\d[\d.]*(?:\([^)]{1,4}\))?)", re.IGNORECASE
+)
 
 
 def _short_label(label: str) -> str:
-    """Shorten 'clause 8.3.1(c)' to '§8.3.1(c)'.
+    """Shorten 'clause 8.3.1(c)' — or a bare '8.3.1(c)' — to '§8.3.1(c)'.
 
     A chip sits inside a sentence a lawyer is reading closely, so it has to be a
-    reference rather than a phrase. Labels without a number ('Definitions') are left
-    alone — a § in front of a word would be wrong.
+    reference rather than a phrase. Labels with no number at all ('Definitions') are
+    left alone — a § in front of a word would be wrong.
     """
     match = _NUMBERED_LABEL.match(label.strip())
     return f"§{match.group(1)}" if match else label.strip()

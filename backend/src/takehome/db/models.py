@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -65,6 +65,11 @@ class Document(Base):
     uploaded_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     conversation: Mapped[Conversation] = relationship(back_populates="documents")
+    summary_items: Mapped[list[SummaryItem]] = relationship(
+        back_populates="document",
+        cascade="all, delete-orphan",
+        order_by="SummaryItem.ordinal",
+    )
 
 
 class Citation(Base):
@@ -93,3 +98,26 @@ class Citation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     message: Mapped[Message] = relationship(back_populates="citations")
+
+
+class SummaryItem(Base):
+    """One key term pulled out of a document when it arrived.
+
+    Citations live here as JSON rather than in the citations table, which is keyed to
+    a message — a summary term has no message behind it. Only verified citations are
+    ever stored, and an item that lost all of its citations is never written at all.
+    """
+
+    __tablename__ = "summary_items"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: uuid.uuid4().hex[:16])
+    document_id: Mapped[str] = mapped_column(ForeignKey("documents.id", ondelete="CASCADE"))
+    ordinal: Mapped[int] = mapped_column(Integer)
+    label: Mapped[str] = mapped_column(String)
+    value: Mapped[str] = mapped_column(Text)
+    risk: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    document_type: Mapped[str | None] = mapped_column(String, nullable=True)
+    citations: Mapped[list[dict[str, object]]] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    document: Mapped[Document] = relationship(back_populates="summary_items")

@@ -1,7 +1,8 @@
 import { AlertCircle, Loader2, RotateCw } from "lucide-react";
 import { useEffect, useRef } from "react";
-import type { Citation, Message } from "../types";
+import type { Citation, Message, DocumentSummary as Summary } from "../types";
 import { ChatInput } from "./ChatInput";
+import { DocumentSummary } from "./DocumentSummary";
 import { EmptyState } from "./EmptyState";
 import { MessageBubble, StreamingBubble } from "./MessageBubble";
 
@@ -14,6 +15,8 @@ interface ChatWindowProps {
 	streamingCitations: Citation[];
 	hasDocument: boolean;
 	uploading: boolean;
+	summary: Summary | null;
+	summaryLoading: boolean;
 	conversationId: string | null;
 	onSend: (content: string) => void;
 	onUpload: (file: File) => void;
@@ -30,6 +33,8 @@ export function ChatWindow({
 	streamingCitations,
 	hasDocument,
 	uploading,
+	summary,
+	summaryLoading,
 	conversationId,
 	onSend,
 	onUpload,
@@ -73,17 +78,26 @@ export function ChatWindow({
 	if (messages.length === 0 && !streaming) {
 		return (
 			<div className="flex flex-1 flex-col bg-white">
-				<div className="flex flex-1 items-center justify-center">
-					{hasDocument ? (
-						<div className="text-center">
-							<p className="text-sm text-neutral-500">
-								Document uploaded. Ask a question to get started.
+				{hasDocument ? (
+					<div className="flex-1 overflow-y-auto px-6 py-4">
+						<DocumentSummary
+							summary={summary}
+							loading={summaryLoading}
+							defaultOpen
+							onSelectCitation={onSelectCitation}
+						/>
+						{!summaryLoading && (
+							<p className="mx-auto mt-3 max-w-2xl text-center text-sm text-neutral-400">
+								Ask a question, or click any reference to see it in the
+								document.
 							</p>
-						</div>
-					) : (
+						)}
+					</div>
+				) : (
+					<div className="flex flex-1 items-center justify-center">
 						<EmptyState onUpload={onUpload} uploading={uploading} />
-					)}
-				</div>
+					</div>
+				)}
 				<ChatInput
 					onSend={onSend}
 					onUpload={onUpload}
@@ -116,6 +130,16 @@ export function ChatWindow({
 			)}
 
 			<div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-4">
+				{hasDocument && (
+					<div className="mb-4">
+						<DocumentSummary
+							summary={summary}
+							loading={summaryLoading}
+							defaultOpen={false}
+							onSelectCitation={onSelectCitation}
+						/>
+					</div>
+				)}
 				<div className="mx-auto max-w-2xl space-y-1">
 					{messages.map((message) => (
 						<MessageBubble
