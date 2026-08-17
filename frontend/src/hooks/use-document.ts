@@ -25,25 +25,40 @@ export function useDocument(conversationId: string | null) {
 		refresh();
 	}, [refresh]);
 
+	/**
+	 * Upload to a named conversation.
+	 *
+	 * Takes the id explicitly so a document can arrive before the conversation it
+	 * belongs to has been selected — which is the order a lawyer works in. They
+	 * arrive holding a document, not holding a question.
+	 */
+	const uploadTo = useCallback(async (targetId: string, file: File) => {
+		try {
+			setUploading(true);
+			setError(null);
+			const doc = await api.uploadDocument(targetId, file);
+			// Adopt it directly rather than refetching. The caller has just switched
+			// to this conversation, and a refetch would run against whichever id this
+			// hook was rendered with — which, on the create-then-upload path, is the
+			// null it had a moment ago.
+			setDocument(doc);
+			return doc;
+		} catch (err) {
+			setError(
+				err instanceof Error ? err.message : "Failed to upload document",
+			);
+			return null;
+		} finally {
+			setUploading(false);
+		}
+	}, []);
+
 	const upload = useCallback(
 		async (file: File) => {
 			if (!conversationId) return null;
-			try {
-				setUploading(true);
-				setError(null);
-				const doc = await api.uploadDocument(conversationId, file);
-				setDocument(doc);
-				return doc;
-			} catch (err) {
-				setError(
-					err instanceof Error ? err.message : "Failed to upload document",
-				);
-				return null;
-			} finally {
-				setUploading(false);
-			}
+			return uploadTo(conversationId, file);
 		},
-		[conversationId],
+		[conversationId, uploadTo],
 	);
 
 	return {
@@ -51,6 +66,7 @@ export function useDocument(conversationId: string | null) {
 		uploading,
 		error,
 		upload,
+		uploadTo,
 		refresh,
 	};
 }

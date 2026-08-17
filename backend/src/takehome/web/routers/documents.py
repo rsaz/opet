@@ -12,13 +12,29 @@ from starlette.responses import FileResponse
 
 from takehome.db.models import SummaryItem
 from takehome.db.session import get_session
-from takehome.services.conversation import get_conversation
+from takehome.services.conversation import get_conversation, update_conversation
 from takehome.services.document import get_document, upload_document
 from takehome.services.summary import extract_summary
 
 logger = structlog.get_logger()
 
 router = APIRouter(tags=["documents"])
+
+# Titles the app itself assigned, and is therefore free to replace.
+_PLACEHOLDER_TITLES = {"New Conversation", "New conversation"}
+
+
+def title_from_filename(filename: str) -> str:
+    """Turn 'commercial-lease-100-bishopsgate.pdf' into 'Commercial lease 100 bishopsgate'.
+
+    Close enough to what the lawyer named the file that they recognise it, without
+    the separators and extension that make a filename look like a filename.
+    """
+    stem = filename.rsplit(".", 1)[0].replace("-", " ").replace("_", " ").strip()
+    stem = " ".join(stem.split())
+    if not stem:
+        return "Untitled document"
+    return stem[:1].upper() + stem[1:]
 
 
 # --------------------------------------------------------------------------- #
@@ -90,6 +106,12 @@ async def upload_document_endpoint(
         if "already has a document" in error_message:
             raise HTTPException(status_code=409, detail=error_message) from e
         raise HTTPException(status_code=400, detail=error_message) from e
+
+    # Name the conversation after the document. These users think in documents —
+    # "dozens per deal" — so a sidebar listing questions is a sidebar they cannot
+    # navigate. Only ever overwrites the placeholder title, never one already earned.
+    if conversation.title in _PLACEHOLDER_TITLES:
+        await update_conversation(session, conversation_id, title_from_filename(document.filename))
 
     logger.info(
         "Document uploaded",

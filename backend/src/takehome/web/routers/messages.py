@@ -201,9 +201,11 @@ async def send_message(
         {"role": m.role, "content": m.content} for m in history_messages
     ]
 
-    # Determine if this is the first user message (for title generation)
+    # A conversation holding a document is already named after it, and that name is
+    # more useful than anything a question could produce. Only untitled, document-less
+    # conversations get a generated title.
     user_msg_count = sum(1 for m in history_messages if m.role == "user")
-    is_first_message = user_msg_count == 0
+    is_first_message = user_msg_count == 0 and document is None
 
     async def event_stream() -> AsyncIterator[str]:
         """Generate SSE events with the streamed LLM response."""

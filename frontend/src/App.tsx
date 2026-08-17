@@ -35,6 +35,7 @@ export default function App() {
 		document,
 		uploading,
 		upload,
+		uploadTo,
 		refresh: refreshDocument,
 	} = useDocument(selectedId);
 
@@ -62,6 +63,19 @@ export default function App() {
 	const handleCreate = useCallback(async () => {
 		await create();
 	}, [create]);
+
+	// Dropping a document with nothing selected makes the conversation for you. The
+	// old front door asked for a container before the thing you actually have was
+	// allowed in.
+	const handleUploadNew = useCallback(
+		async (file: File) => {
+			const conversation = await create();
+			if (!conversation) return;
+			const doc = await uploadTo(conversation.id, file);
+			if (doc) refreshConversations();
+		},
+		[create, uploadTo, refreshConversations],
+	);
 
 	// The citation the reader is currently checking. Held here rather than in the
 	// chat pane because it is what connects the two halves of the screen.
@@ -92,6 +106,7 @@ export default function App() {
 				/>
 
 				<ChatWindow
+					onUploadNew={handleUploadNew}
 					messages={messages}
 					loading={messagesLoading}
 					error={messagesError}

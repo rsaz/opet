@@ -60,7 +60,7 @@ class SummaryItem(BaseModel):
     label: str = Field(description="Short scannable name for the term")
     value: str = Field(description="What the document says, in plain English")
     risk: bool = Field(default=False, description="Whether a reviewer should escalate this")
-    citations: list[SummaryCitation] = Field(default_factory=list)
+    citations: list[SummaryCitation] = []
 
 
 class ExtractedSummary(BaseModel):
