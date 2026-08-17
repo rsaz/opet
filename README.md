@@ -4,8 +4,11 @@ A document Q&A tool for commercial real estate lawyers, extended so that **every
 it makes can be checked in one click — whether the lawyer asked the question or not.**
 
 **Loom walkthrough — Part 1:** <https://www.loom.com/share/7b5fe7f22b1142aa8293ba9deea051d5>
+
 **Loom walkthrough — Part 2:** <https://www.loom.com/share/c984e60f754c4ef4aaabdd73623d785c>
+
 **Why this and not something else:** [`DECISIONS.md`](./DECISIONS.md)
+
 **Part 1 — written question:** [`PART-1.md`](./PART-1.md)
 
 ---
