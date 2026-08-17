@@ -16,6 +16,7 @@ interface ChatWindowProps {
 	conversationId: string | null;
 	onSend: (content: string) => void;
 	onUpload: (file: File) => void;
+	onSelectCitation: (citation: Citation) => void;
 }
 
 export function ChatWindow({
@@ -29,6 +30,7 @@ export function ChatWindow({
 	conversationId,
 	onSend,
 	onUpload,
+	onSelectCitation,
 }: ChatWindowProps) {
 	const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -99,12 +101,17 @@ export function ChatWindow({
 			<div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-4">
 				<div className="mx-auto max-w-2xl space-y-1">
 					{messages.map((message) => (
-						<MessageBubble key={message.id} message={message} />
+						<MessageBubble
+							key={message.id}
+							message={message}
+							onSelectCitation={onSelectCitation}
+						/>
 					))}
 					{streaming && (
 						<StreamingBubble
 							content={streamingContent}
 							citations={streamingCitations}
+							onSelectCitation={onSelectCitation}
 						/>
 					)}
 				</div>

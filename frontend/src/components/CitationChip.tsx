@@ -11,6 +11,7 @@ export function citationOrdinal(href: string | undefined): number | null {
 interface CitationChipProps {
 	label: string;
 	citation?: Citation;
+	onSelect?: (citation: Citation) => void;
 }
 
 /**
@@ -18,20 +19,23 @@ interface CitationChipProps {
  *
  * Deliberately quiet: it sits inside legal prose that a lawyer is reading closely, so
  * it has to be findable without competing with the sentence it supports. Hovering
- * shows the passage itself — most verification questions are answered by reading the
- * words, without going near the document.
+ * shows the passage itself, and clicking reveals it in the document — most
+ * verification is answered by the first, and the rest by the second.
  */
-export function CitationChip({ label, citation }: CitationChipProps) {
+export function CitationChip({ label, citation, onSelect }: CitationChipProps) {
 	const approximate = citation?.match_kind === "partial";
 
 	const chip = (
-		<span
-			className={`ml-1 whitespace-nowrap rounded bg-neutral-100 px-1.5 py-px align-baseline font-mono text-[0.6875rem] font-medium text-neutral-500 ${
+		<button
+			type="button"
+			disabled={!citation}
+			onClick={citation ? () => onSelect?.(citation) : undefined}
+			className={`ml-1 whitespace-nowrap rounded bg-neutral-100 px-1.5 py-px align-baseline font-mono text-[0.6875rem] font-medium text-neutral-500 transition-colors hover:bg-amber-100 hover:text-amber-900 disabled:cursor-default disabled:hover:bg-neutral-100 disabled:hover:text-neutral-500 ${
 				approximate ? "underline decoration-dotted underline-offset-2" : ""
 			}`}
 		>
 			{label}
-		</span>
+		</button>
 	);
 
 	// Before the citation has arrived from the server there is nothing to show, so

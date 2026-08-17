@@ -13,7 +13,10 @@ import { CitationChip, citationOrdinal } from "./CitationChip";
  * link element has to be overridden here or the citation loses the one thing that
  * makes it useful — which document position it points at.
  */
-function citationComponents(citations: Citation[]) {
+function citationComponents(
+	citations: Citation[],
+	onSelectCitation?: (citation: Citation) => void,
+) {
 	const byOrdinal = new Map(citations.map((c) => [c.ordinal, c]));
 
 	return {
@@ -36,6 +39,7 @@ function citationComponents(citations: Citation[]) {
 				<CitationChip
 					label={String(children)}
 					citation={byOrdinal.get(ordinal)}
+					onSelect={onSelectCitation}
 				/>
 			);
 		},
@@ -44,12 +48,16 @@ function citationComponents(citations: Citation[]) {
 
 interface MessageBubbleProps {
 	message: Message;
+	onSelectCitation?: (citation: Citation) => void;
 }
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({
+	message,
+	onSelectCitation,
+}: MessageBubbleProps) {
 	const components = useMemo(
-		() => citationComponents(message.citations ?? []),
-		[message.citations],
+		() => citationComponents(message.citations ?? [], onSelectCitation),
+		[message.citations, onSelectCitation],
 	);
 
 	if (message.role === "system") {
@@ -126,12 +134,17 @@ function UnverifiedNote({ count }: { count: number }) {
 interface StreamingBubbleProps {
 	content: string;
 	citations?: Citation[];
+	onSelectCitation?: (citation: Citation) => void;
 }
 
-export function StreamingBubble({ content, citations }: StreamingBubbleProps) {
+export function StreamingBubble({
+	content,
+	citations,
+	onSelectCitation,
+}: StreamingBubbleProps) {
 	const components = useMemo(
-		() => citationComponents(citations ?? []),
-		[citations],
+		() => citationComponents(citations ?? [], onSelectCitation),
+		[citations, onSelectCitation],
 	);
 
 	return (

@@ -35,6 +35,37 @@ body {
 	background-color: #a3a3a3;
 }
 
+/* Marks the cited characters inside pdf.js's transparent text layer, but paints
+   nothing itself: it exists so the highlight can be measured, and a <mark> would
+   otherwise put its default black text on top of the rendered page. */
+.citation-anchor {
+	color: transparent;
+	background: transparent;
+}
+
+/* The highlight as drawn — one band per line, measured from the anchors above.
+   Sits over the rendered canvas but under the text layer, so text stays selectable. */
+.citation-band {
+	position: absolute;
+	z-index: 1;
+	pointer-events: none;
+	border-radius: 2px;
+	background-color: rgba(251, 191, 36, 0.45);
+	animation: citation-flash 1.6s ease-out;
+}
+
+@keyframes citation-flash {
+	0% {
+		background-color: rgba(245, 158, 11, 0.95);
+	}
+	60% {
+		background-color: rgba(245, 158, 11, 0.9);
+	}
+	100% {
+		background-color: rgba(251, 191, 36, 0.45);
+	}
+}
+
 /* Prose styling for markdown content */
 .prose {
 	line-height: 1.7;
