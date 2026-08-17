@@ -8,7 +8,7 @@ from datetime import datetime
 import structlog
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from starlette.responses import StreamingResponse
@@ -209,6 +209,10 @@ async def send_message(
         verified: list[tuple[CitationDraft, CitationMatch]] = []
         rejected = 0
 
+        # A fresh session, since the request-scoped one may be closed by the time
+        # the stream finishes.
+        from takehome.db.session import async_session as session_factory
+
         try:
             async for event in chat_with_document(
                 user_message=body.content,
@@ -264,15 +268,26 @@ async def send_message(
                 "Error during LLM streaming",
                 conversation_id=conversation_id,
             )
-            error_msg = "I'm sorry, an error occurred while generating a response. Please try again."
-            full_response = error_msg
-            verified = []
-            event_data = json.dumps({"type": "content", "content": error_msg})
-            yield f"data: {event_data}\n\n"
+            # Leave no false record. Previously the apology was saved as the
+            # assistant's answer, which made a failed request indistinguishable
+            # from a real one for anyone reading the transcript later — in a legal
+            # matter, that is a worse outcome than the failure itself. Drop the
+            # user's turn too, so the conversation is exactly as it was and the
+            # question can simply be asked again.
+            async with session_factory() as cleanup_session:
+                await cleanup_session.execute(
+                    delete(Message).where(Message.id == user_message.id)
+                )
+                await cleanup_session.commit()
 
-        # Save the assistant message to the database.
-        # We need a fresh session since the outer one may have been closed.
-        from takehome.db.session import async_session as session_factory
+            error_event = json.dumps(
+                {
+                    "type": "error",
+                    "error": "The assistant could not answer that. Nothing was saved.",
+                }
+            )
+            yield f"data: {error_event}\n\n"
+            return
 
         async with session_factory() as save_session:
             assistant_message = Message(

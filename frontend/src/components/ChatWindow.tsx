@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, RotateCw } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { Citation, Message } from "../types";
 import { ChatInput } from "./ChatInput";
@@ -13,10 +13,12 @@ interface ChatWindowProps {
 	streamingContent: string;
 	streamingCitations: Citation[];
 	hasDocument: boolean;
+	uploading: boolean;
 	conversationId: string | null;
 	onSend: (content: string) => void;
 	onUpload: (file: File) => void;
 	onSelectCitation: (citation: Citation) => void;
+	onRetry: () => void;
 }
 
 export function ChatWindow({
@@ -27,10 +29,12 @@ export function ChatWindow({
 	streamingContent,
 	streamingCitations,
 	hasDocument,
+	uploading,
 	conversationId,
 	onSend,
 	onUpload,
 	onSelectCitation,
+	onRetry,
 }: ChatWindowProps) {
 	const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -77,7 +81,7 @@ export function ChatWindow({
 							</p>
 						</div>
 					) : (
-						<EmptyState onUpload={onUpload} />
+						<EmptyState onUpload={onUpload} uploading={uploading} />
 					)}
 				</div>
 				<ChatInput
@@ -85,6 +89,7 @@ export function ChatWindow({
 					onUpload={onUpload}
 					disabled={streaming}
 					hasDocument={hasDocument}
+					uploading={uploading}
 				/>
 			</div>
 		);
@@ -93,8 +98,20 @@ export function ChatWindow({
 	return (
 		<div className="flex flex-1 flex-col bg-white">
 			{error && (
-				<div className="mx-4 mt-2 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
-					{error}
+				<div className="mx-auto mt-3 flex w-full max-w-2xl items-start gap-2.5 rounded-lg border border-red-100 bg-red-50 px-3.5 py-3">
+					<AlertCircle className="mt-px h-4 w-4 flex-shrink-0 text-red-500" />
+					<div className="min-w-0 flex-1">
+						<p className="text-sm text-red-700">{error}</p>
+						<button
+							type="button"
+							onClick={onRetry}
+							disabled={streaming}
+							className="mt-1.5 inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-white px-2.5 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50"
+						>
+							<RotateCw className="h-3 w-3" />
+							Ask again
+						</button>
+					</div>
 				</div>
 			)}
 
@@ -122,6 +139,7 @@ export function ChatWindow({
 				onUpload={onUpload}
 				disabled={streaming}
 				hasDocument={hasDocument}
+				uploading={uploading}
 			/>
 		</div>
 	);

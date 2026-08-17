@@ -9,6 +9,8 @@ export function useMessages(conversationId: string | null) {
 	const [streaming, setStreaming] = useState(false);
 	const [streamingContent, setStreamingContent] = useState("");
 	const [streamingCitations, setStreamingCitations] = useState<Citation[]>([]);
+	/** The question that failed, kept so it can be asked again without retyping. */
+	const [failedMessage, setFailedMessage] = useState<string | null>(null);
 	const abortRef = useRef<AbortController | null>(null);
 
 	const refresh = useCallback(async () => {
@@ -55,6 +57,7 @@ export function useMessages(conversationId: string | null) {
 			setStreamingContent("");
 			setStreamingCitations([]);
 			setError(null);
+			setFailedMessage(null);
 
 			try {
 				const response = await api.sendMessage(conversationId, content);
@@ -67,6 +70,7 @@ export function useMessages(conversationId: string | null) {
 				const decoder = new TextDecoder();
 				let accumulated = "";
 				let buffer = "";
+				let failure: string | null = null;
 
 				while (true) {
 					const { done, value } = await reader.read();
@@ -91,7 +95,15 @@ export function useMessages(conversationId: string | null) {
 								delta?: string;
 								message?: Message;
 								citation?: Citation;
+								error?: string;
 							};
+
+							if (parsed.type === "error") {
+								// The server discarded the turn entirely rather than
+								// saving an apology as if it were an answer.
+								failure = parsed.error ?? "Something went wrong.";
+								continue;
+							}
 
 							if (parsed.type === "delta" && parsed.delta) {
 								accumulated += parsed.delta;
@@ -117,6 +129,14 @@ export function useMessages(conversationId: string | null) {
 							// Skip invalid JSON lines
 						}
 					}
+				}
+
+				if (failure) {
+					// Nothing was persisted, so the server's view is the truth.
+					setError(failure);
+					setFailedMessage(content);
+					setMessages(await api.fetchMessages(conversationId));
+					return;
 				}
 
 				// If we accumulated content but never got a final message,
@@ -148,10 +168,17 @@ export function useMessages(conversationId: string | null) {
 		[conversationId, streaming],
 	);
 
+	const retry = useCallback(async () => {
+		if (!failedMessage) return;
+		await send(failedMessage);
+	}, [failedMessage, send]);
+
 	return {
 		messages,
 		loading,
 		error,
+		failedMessage,
+		retry,
 		streaming,
 		streamingContent,
 		streamingCitations,

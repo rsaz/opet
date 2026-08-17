@@ -27,10 +27,12 @@ export default function App() {
 		streamingContent,
 		streamingCitations,
 		send,
+		retry,
 	} = useMessages(selectedId);
 
 	const {
 		document,
+		uploading,
 		upload,
 		refresh: refreshDocument,
 	} = useDocument(selectedId);
@@ -94,10 +96,12 @@ export default function App() {
 					streamingContent={streamingContent}
 					streamingCitations={streamingCitations}
 					hasDocument={!!document}
+					uploading={uploading}
 					conversationId={selectedId}
 					onSend={handleSend}
 					onUpload={handleUpload}
 					onSelectCitation={handleSelectCitation}
+					onRetry={retry}
 				/>
 
 				<DocumentViewer document={document} activeCitation={activeCitation} />
