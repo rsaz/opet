@@ -12,8 +12,13 @@ export interface Citation {
 	/** 1-based, and what the inline `#cite-N` anchor in the message body points at. */
 	ordinal: number;
 	page: number;
+	/** The model's transcription of the passage. */
 	quote: string;
 	label: string;
+	/** The passage in the document's own characters — what gets highlighted. */
+	matched_text?: string | null;
+	/** How confidently the quote was located: exact, normalised or partial. */
+	match_kind?: "exact" | "normalised" | "partial" | null;
 }
 
 export interface Message {

@@ -94,6 +94,11 @@ class Citation(Base):
     page: Mapped[int] = mapped_column(Integer)
     quote: Mapped[str] = mapped_column(Text)
     label: Mapped[str] = mapped_column(String)
+    # The passage as the document words it — what gets highlighted. Differs from
+    # `quote` when the model's transcription drifted in whitespace or punctuation.
+    matched_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # exact | normalised | partial. Only verified citations are ever stored.
+    match_kind: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     message: Mapped[Message] = relationship(back_populates="citations")

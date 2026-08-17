@@ -15,6 +15,7 @@ from starlette.responses import StreamingResponse
 
 from takehome.db.models import Citation, Message
 from takehome.db.session import get_session
+from takehome.services.citations import CitationMatch, verify
 from takehome.services.conversation import get_conversation, update_conversation
 from takehome.services.document import get_document_for_conversation
 from takehome.services.llm import (
@@ -40,6 +41,8 @@ class CitationOut(BaseModel):
     page: int
     quote: str
     label: str
+    matched_text: str | None = None
+    match_kind: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -98,6 +101,8 @@ def _serialise(message: Message, citations: list[Citation]) -> dict[str, object]
                 "page": c.page,
                 "quote": c.quote,
                 "label": c.label,
+                "matched_text": c.matched_text,
+                "match_kind": c.match_kind,
             }
             for c in citations
         ],
@@ -198,7 +203,8 @@ async def send_message(
     async def event_stream() -> AsyncIterator[str]:
         """Generate SSE events with the streamed LLM response."""
         full_response = ""
-        drafts: list[CitationDraft] = []
+        verified: list[tuple[CitationDraft, CitationMatch]] = []
+        rejected = 0
 
         try:
             async for event in chat_with_document(
@@ -213,11 +219,25 @@ async def send_message(
                     yield f"data: {text_event}\n\n"
                     continue
 
-                # A citation. Number it, drop it into the prose exactly where the model
-                # put it, and tell the client about it separately.
-                drafts.append(event)
-                ordinal = len(drafts)
-                link = _citation_link(ordinal, event.label, event.page)
+                # A citation. Check it against the document before it is allowed
+                # anywhere near the answer — a quote that isn't in the document is
+                # dropped, leaving the claim visibly unsupported rather than falsely
+                # supported.
+                match = verify(event.quote, pages or [], event.page)
+                if match is None:
+                    rejected += 1
+                    logger.warning(
+                        "Rejected unverifiable citation",
+                        conversation_id=conversation_id,
+                        claimed_page=event.page,
+                        label=event.label,
+                        quote=event.quote[:120],
+                    )
+                    continue
+
+                verified.append((event, match))
+                ordinal = len(verified)
+                link = _citation_link(ordinal, event.label, match.page)
                 full_response += link
                 link_event = json.dumps({"type": "content", "content": link})
                 yield f"data: {link_event}\n\n"
@@ -226,9 +246,11 @@ async def send_message(
                         "type": "citation",
                         "citation": {
                             "ordinal": ordinal,
-                            "page": event.page,
+                            "page": match.page,
                             "quote": event.quote,
                             "label": event.label,
+                            "matched_text": match.text,
+                            "match_kind": str(match.kind),
                         },
                     }
                 )
@@ -241,7 +263,7 @@ async def send_message(
             )
             error_msg = "I'm sorry, an error occurred while generating a response. Please try again."
             full_response = error_msg
-            drafts = []
+            verified = []
             event_data = json.dumps({"type": "content", "content": error_msg})
             yield f"data: {event_data}\n\n"
 
@@ -254,7 +276,7 @@ async def send_message(
                 conversation_id=conversation_id,
                 role="assistant",
                 content=full_response,
-                sources_cited=len(drafts),
+                sources_cited=len(verified),
             )
             save_session.add(assistant_message)
             await save_session.commit()
@@ -265,11 +287,13 @@ async def send_message(
                     message_id=assistant_message.id,
                     document_id=document_id,
                     ordinal=ordinal,
-                    page=draft.page,
+                    page=match.page,
                     quote=draft.quote,
                     label=draft.label,
+                    matched_text=match.text,
+                    match_kind=str(match.kind),
                 )
-                for ordinal, draft in enumerate(drafts, start=1)
+                for ordinal, (draft, match) in enumerate(verified, start=1)
             ]
             if citations:
                 save_session.add_all(citations)
@@ -282,6 +306,7 @@ async def send_message(
                 conversation_id=conversation_id,
                 message_id=assistant_message.id,
                 citations=len(citations),
+                rejected_citations=rejected,
             )
 
             # Auto-generate title from first user message
