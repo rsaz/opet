@@ -71,8 +71,12 @@ db-shell:
 # Code Quality
 # =============================================================================
 
+# Run the test suite
+test:
+    docker compose exec backend uv run pytest backend/tests
+
 # Run all checks
-check: check-backend check-frontend
+check: check-backend check-frontend test
 
 # Format all code
 fmt: fmt-backend fmt-frontend

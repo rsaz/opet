@@ -23,6 +23,9 @@ services:
       - "${API_PORT:-8000}:8000"
     volumes:
       - ./backend/src:/app/backend/src
+      # pyproject points testpaths at backend/tests, but it was never mounted —
+      # so pytest could not see a test even if one existed.
+      - ./backend/tests:/app/backend/tests
       - ./alembic:/app/alembic
       - ./uploads:/app/uploads
       - ./pyproject.toml:/app/pyproject.toml
