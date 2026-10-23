@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate 3 synthetic legal PDF documents using reportlab.
+Generate 3 synthetic legal PDF documents using reportlab lib.
 
 Documents:
 1. commercial-lease-100-bishopsgate.pdf  (~6-8 pages)
